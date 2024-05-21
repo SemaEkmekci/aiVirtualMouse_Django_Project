@@ -9,13 +9,9 @@ from django.shortcuts import render
 def index(request):
     return render(request, "pages/index.html")
 
-def game(request):
-    return render(request, "pages/game.html")
-
-# Global değişken olarak tanımlanan kamera nesnesi
 global_cam = None
 
-# Kamera akışını sağlayan sınıf
+
 class VideoCamera(object):
     def __init__(self):
         self.video = cv2.VideoCapture(0)
@@ -30,14 +26,13 @@ class VideoCamera(object):
         while True:
             (self.grabbed, self.frame) = self.video.read()
 
-# HTTP yanıtı olarak kameradan gelen görüntüyü yayınlayan fonksiyon
 def gen(camera):
     while True:
         frame = camera.get_frame()
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
 
-# El izleme işlemini gerçekleştiren fonksiyon
+
 def virtualMouse(camera):
     handDetector = mp.solutions.hands.Hands()
     drawingUtils = mp.solutions.drawing_utils
@@ -45,7 +40,7 @@ def virtualMouse(camera):
     index_y = 0
 
     while True:
-        _, frame = camera.video.read()  # Kameradan yeni bir kare al
+        _, frame = camera.video.read() 
         frame = cv2.flip(frame, 1)
         frameHeight, frameWidth, _ = frame.shape
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -75,6 +70,14 @@ def virtualMouse(camera):
                         if abs(index_y - thumb_y) < 50:
                             pyautogui.click()
                             pyautogui.sleep(1)
+                    if id == 20:
+                        cv2.circle(img=frame, center=(x, y), radius=10, color=(0, 255, 255))
+                        little_x = screenWidth / frameWidth * x
+                        little_y = screenHeight / frameHeight * y
+                        if abs(thumb_y-little_y) < 50:
+                            pyautogui.click()
+                            pyautogui.click()
+                            pyautogui.sleep(1)
                     if id == 16:
                         cv2.circle(img=frame, center=(x, y), radius=10, color=(0, 255, 255))
                         thumb_x = screenWidth / frameWidth * x
@@ -87,7 +90,7 @@ def virtualMouse(camera):
                                 pyautogui.scroll(15)  
                             elif thumb_y < index_y:  
                                 pyautogui.scroll(-15) 
-        # Kareyi HTTP yanıtı olarak gönder
+     
         _, jpeg = cv2.imencode('.jpg', frame)
         frame_bytes = jpeg.tobytes()
         yield (b'--frame\r\n'
@@ -98,20 +101,20 @@ def stop_camera(request):
     global global_cam
     try:
         if global_cam:
-            global_cam.video.release()  # Kamerayı kapat
-            global_cam = None  # global_cam değişkenini sıfırla
+            global_cam.video.release()  
+            global_cam = None 
             return HttpResponse("Kamera başarıyla kapatıldı.")
         else:
             return HttpResponse("Kamera zaten kapalı.")
     except Exception as e:
         return HttpResponse("Kamera kapatılırken bir hata oluştu: {}".format(str(e)))
         
-# Görüntü yayını başlatan ve virtualMouse fonksiyonunu bir thread içinde başlatan ana view fonksiyonu
+
 def Home(request):
     global global_cam
     try:
         if not global_cam:
-            global_cam = VideoCamera()  # Yeni kamera nesnesi oluştur
+            global_cam = VideoCamera()  
         return StreamingHttpResponse(virtualMouse(global_cam), content_type="multipart/x-mixed-replace; boundary=frame")
     except Exception as e:
         print(e)

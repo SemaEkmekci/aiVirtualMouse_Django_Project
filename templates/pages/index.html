@@ -164,7 +164,7 @@
                                 score++;
                                 if (score == brickRowCount * brickColumnCount) {
                                     showMessage("Tebrikler Kazandınız.");
-                                    canvas.style.display = "none";
+                                    location.reload()
 
                                 }
                             }
@@ -239,6 +239,7 @@
                         if (lives == 0) {
                             showMessage("Kaybettiniz!!!");
                             canvas.style.display = "none";
+                            location.reload();
                             cancelAnimationFrame(requestID);
 
                         }
